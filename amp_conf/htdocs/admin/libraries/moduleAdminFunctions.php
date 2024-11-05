@@ -45,13 +45,12 @@ function download_progress($action, $params) {
 	}
 }
 
-function format_changelog($changelog) {
+function format_changelog($changelog, $modulename=false) {
 	$changelog = nl2br($changelog);
 	$changelog = preg_replace('/(\d+(\.\d+|\.\d+beta\d+|\.\d+alpha\d+|\.\d+rc\d+|\.\d+RC\d+)+):/', '<strong>$0</strong>', $changelog);
 	$changelog = preg_replace('/\*(\d+(\.\d+|\.\d+beta\d+|\.\d+alpha\d+|\.\d+rc\d+|\.\d+RC\d+)+)\*/', '<strong>$1:</strong>', $changelog);
 	$changelog = preg_replace('/(\d+(\.\d+|\.\d+beta\d+|\.\d+alpha\d+|\.\d+rc\d+|\.\d+RC\d+)+) /', '<strong>$1: </strong>', $changelog);
-
-	$changelog = format_ticket($changelog);
+	$changelog = format_ticket($changelog, $modulename);
 
 	$changelog = preg_replace_callback('/(?<!\w)r(\d+)(?!\w)/', 'trac_replace_changeset', $changelog);
 	$changelog = preg_replace_callback('/(?<!\w)\[(\d+)\](?!\w)/', 'trac_replace_changeset', $changelog);
@@ -59,12 +58,22 @@ function format_changelog($changelog) {
 	return $changelog;
 }
 
-function format_ticket($string) {
+function format_ticket($string, $modulename=false) {
 	// convert '#xxx', 'ticket xxx', 'bug xxx' to ticket links and rxxx to changeset links in trac
 	$string = preg_replace_callback('/(?<!\w)(?:#|bug |ticket )([^&]\d{3,5})(?!\w)/i', 'trac_replace_ticket', $string);
 
 	// Convert FREEPBX|FPBXDISTRO(-| )6745 for jira
 	$string = preg_replace_callback('/(FREEPBX|FPBXDISTRO)(?:\-| )([^&]\d{3,5})(?!\w)/', 'jira_replace_ticket', $string);
+
+	$string = preg_replace_callback('/(FREEI)(?:\-| )([^&]\d{1,5})(?!\w)/', 'sangoma_atlassian_replace_ticket', $string);
+
+	$string = preg_replace_callback(
+		'/Github #(\d+)/',
+		function($match) use ($modulename) {
+			return github_replace_ticket($match, $modulename);
+		},
+		$string
+	);
 
 	return $string;
 }
@@ -121,6 +130,22 @@ function trac_replace_changeset($match) {
 function jira_replace_ticket($match) {
 	$baseurl = 'http://issues.freepbx.org/browse/'.$match[1].'-';
 	return '<a target="tractickets" href="'.$baseurl.$match[2].'" title="ticket '.$match[2].'">#'.$match[2].'</a>';
+}
+
+function sangoma_atlassian_replace_ticket($match) {
+	$ticket_prefix = isset($match[1]) ? $match[1] : ''; // FREEI
+	$ticket_number = isset($match[2]) ? $match[2] : '';
+	$baseurl = 'https://sangoma.atlassian.net/browse/'.$ticket_prefix.'-';
+	return '<a target="tractickets" href="'.$baseurl.$ticket_number.'" title="sangoma atlassian tickets '.$ticket_number.'">'.$ticket_prefix.'-'.$ticket_number.'</a>';
+}
+
+function github_replace_ticket($match, $modulename) {
+	$issue_number = isset($match[1]) ? $match[1] : ''; // Capture the issue number after #
+	$baseurl = 'https://github.com/FreePBX/issue-tracker/issues/';
+	if ($modulename) {
+    	$baseurl = 'https://github.com/FreePBX/'.$modulename.'/issues/';
+	}
+    return '<a target="tractickets" href="'.$baseurl.$issue_number.'" title="GitHub issue '.$issue_number.'">issues-'.$issue_number.'</a>';
 }
 
 function pageReload(){

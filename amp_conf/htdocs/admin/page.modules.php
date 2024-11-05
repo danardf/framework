@@ -1061,9 +1061,9 @@ switch ($action) {
 			}
 
 			if (!empty($modules_online[$name]['changelog'])) {
-				$module_display[$category]['data'][$name]['changelog'] = format_changelog($modules_online[$name]['changelog']);
+				$module_display[$category]['data'][$name]['changelog'] = format_changelog($modules_online[$name]['changelog'], $name);
 			} elseif(!empty($modules_local[$name]['changelog'])) {
-				$module_display[$category]['data'][$name]['changelog'] = format_changelog($modules_local[$name]['changelog']);
+				$module_display[$category]['data'][$name]['changelog'] = format_changelog($modules_local[$name]['changelog'], $name);
 			}
 
 			if(isset($module_display[$category]['data'][$name]['description'])) {
