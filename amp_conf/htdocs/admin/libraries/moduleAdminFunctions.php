@@ -68,7 +68,7 @@ function format_ticket($string, $modulename=false) {
 	$string = preg_replace_callback('/(FREEI)(?:\-| )([^&]\d{1,5})(?!\w)/', 'sangoma_atlassian_replace_ticket', $string);
 
 	$string = preg_replace_callback(
-		'/Github #(\d+)/',
+		'/Github\s*#(\d+)/i',
 		function($match) use ($modulename) {
 			return github_replace_ticket($match, $modulename);
 		},
@@ -136,7 +136,7 @@ function sangoma_atlassian_replace_ticket($match) {
 	$ticket_prefix = isset($match[1]) ? $match[1] : ''; // FREEI
 	$ticket_number = isset($match[2]) ? $match[2] : '';
 	$baseurl = 'https://sangoma.atlassian.net/browse/'.$ticket_prefix.'-';
-	return '<a target="tractickets" href="'.$baseurl.$ticket_number.'" title="sangoma atlassian tickets '.$ticket_number.'">'.$ticket_prefix.'-'.$ticket_number.'</a>';
+	return '<a target="tractickets" href="'.$baseurl.$ticket_number.'" class="text-primary fw-bold p-1" title="sangoma atlassian tickets '.$ticket_number.'">'.$ticket_prefix.'-'.$ticket_number.'</a>';
 }
 
 function github_replace_ticket($match, $modulename) {
@@ -145,7 +145,7 @@ function github_replace_ticket($match, $modulename) {
 	if ($modulename) {
     	$baseurl = 'https://github.com/FreePBX/'.$modulename.'/issues/';
 	}
-    return '<a target="tractickets" href="'.$baseurl.$issue_number.'" title="GitHub issue '.$issue_number.'">issues-'.$issue_number.'</a>';
+    return '<a target="tractickets" href="'.$baseurl.$issue_number.'" class="text-primary fw-bold p-1" title="GitHub issue '.$issue_number.'">issues-'.$issue_number.'</a>';
 }
 
 function pageReload(){
