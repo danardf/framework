@@ -68,9 +68,29 @@ function format_ticket($string, $modulename=false) {
 	$string = preg_replace_callback('/(FREEI)(?:\-| )([^&]\d{1,5})(?!\w)/', 'sangoma_atlassian_replace_ticket', $string);
 
 	$string = preg_replace_callback(
-		'/Github\s*#(\d+)/i',
-		function($match) use ($modulename) {
-			return github_replace_ticket($match, $modulename);
+		'/(Github\s*#(\w{2,})|#(\w{2,}\/\w{2,})|#(\w{2,}))/i',
+		function ($match) {
+			// Handle GitHub issues like "Github #123"
+			if (isset($match[2]) && !empty($match[2])) {
+				$issue_number = $match[2];
+				$baseurl = 'https://github.com/FreePBX/issue-tracker/issues/';
+				return '<a target="tractickets" href="' . $baseurl . $issue_number . '" class="text-primary fw-bold p-1" title="GitHub issue ' . $issue_number . '">issues-' . $issue_number . '</a>';
+			}
+	
+			// Handle module issues like "#module/123"
+			if (isset($match[3]) && !empty($match[3])) {
+				list($module, $issue_number) = explode('/', $match[3]);
+				$baseurl = 'https://github.com/FreePBX/' . $module . '/issues/';
+				return '<a target="tractickets" href="' . $baseurl . $issue_number . '" class="text-primary fw-bold p-1" title="Module issue ' . $module . '/' . $issue_number . '"> issues-' . $issue_number . '</a>';
+			}
+	
+			// Handle direct issues like "#123"
+			if (isset($match[4]) && !empty($match[4])) {
+				$issue_number = $match[4];
+				$baseurl = 'https://github.com/FreePBX/issue-tracker/issues/';
+				return '<a target="tractickets" href="' . $baseurl . $issue_number . '" class="text-primary fw-bold p-1" title="Issue ' . $issue_number . '">issues-' . $issue_number . '</a>';
+			}
+			return isset($match[0])? $match[0] :'';
 		},
 		$string
 	);
@@ -137,15 +157,6 @@ function sangoma_atlassian_replace_ticket($match) {
 	$ticket_number = isset($match[2]) ? $match[2] : '';
 	$baseurl = 'https://sangoma.atlassian.net/browse/'.$ticket_prefix.'-';
 	return '<a target="tractickets" href="'.$baseurl.$ticket_number.'" class="text-primary fw-bold p-1" title="sangoma atlassian tickets '.$ticket_number.'">'.$ticket_prefix.'-'.$ticket_number.'</a>';
-}
-
-function github_replace_ticket($match, $modulename) {
-	$issue_number = isset($match[1]) ? $match[1] : ''; // Capture the issue number after #
-	$baseurl = 'https://github.com/FreePBX/issue-tracker/issues/';
-	if ($modulename) {
-    	$baseurl = 'https://github.com/FreePBX/'.$modulename.'/issues/';
-	}
-    return '<a target="tractickets" href="'.$baseurl.$issue_number.'" class="text-primary fw-bold p-1" title="GitHub issue '.$issue_number.'">issues-'.$issue_number.'</a>';
 }
 
 function pageReload(){
